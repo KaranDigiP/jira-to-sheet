@@ -17,7 +17,7 @@ API_TOKEN = os.getenv("JIRA_API_TOKEN")
 GOOGLE_SHEET_NAME = "SuperApi-updated-cluster-ticket-sheet"
 
 # IMPORTANT: PROJECT FILTER
-JQL = "project = MDRS ORDER BY created DESC"
+JQL = "key = MDRS-2085"
 
 # ==============================
 # 📊 COLUMNS
