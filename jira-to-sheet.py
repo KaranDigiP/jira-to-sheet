@@ -17,7 +17,7 @@ API_TOKEN = os.getenv("JIRA_API_TOKEN")
 GOOGLE_SHEET_NAME = "SuperApi-updated-cluster-ticket-sheet"
 
 # IMPORTANT: PROJECT FILTER
-JQL = "ORDER BY created DESC"
+JQL = "created >= -7d ORDER BY created DESC"
 
 # ==============================
 # 📊 COLUMNS
