@@ -62,13 +62,12 @@ def fetch_jira_issues(jql):
 
         print("Fetched:", len(batch))
         issues.extend(batch)
-
+        print("Status:", response.status_code)
+        print("Response:", response.text[:500])
         if len(batch) < 50:
             break
 
         start_at += 50
-        print("Status:", response.status_code)
-        print("Response:", response.text[:500])
     return issues
 
 # ==============================
