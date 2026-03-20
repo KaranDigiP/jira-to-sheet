@@ -334,7 +334,12 @@ def main():
     client = connect_sheets()
     sync_all(client)
     print("✅ Done!")
+    response = requests.get(
+    f"{JIRA_URL}/rest/api/3/project/search",
+    auth=(EMAIL, API_TOKEN)
+    )
 
+    print(response.json())
 # ==============================
 # ▶ RUN
 # ==============================
