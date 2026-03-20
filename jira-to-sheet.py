@@ -17,7 +17,7 @@ API_TOKEN = os.getenv("JIRA_API_TOKEN")
 GOOGLE_SHEET_NAME = "SuperApi-updated-cluster-ticket-sheet"
 
 # IMPORTANT: PROJECT FILTER
-JQL = "project = MDRS AND created >= -30d ORDER BY created DESC"
+JQL = "project = MDRS ORDER BY created DESC"
 
 # ==============================
 # 📊 COLUMNS
@@ -67,7 +67,8 @@ def fetch_jira_issues(jql):
             break
 
         start_at += 50
-
+        print("Status:", response.status_code)
+        print("Response:", response.text[:500])
     return issues
 
 # ==============================
