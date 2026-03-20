@@ -16,8 +16,8 @@ API_TOKEN = os.getenv("JIRA_API_TOKEN")
 
 GOOGLE_SHEET_NAME = "SuperApi-updated-cluster-ticket-sheet"
 
-# IMPORTANT: PROJECT FILTER
-JQL = "created >= -7d ORDER BY created DESC"
+# SAFE JQL (bounded)
+JQL = "project = MDRS AND created >= -365d ORDER BY created DESC"
 
 # ==============================
 # 📊 COLUMNS
@@ -39,6 +39,9 @@ def fetch_jira_issues(jql):
     issues = []
     start_at = 0
 
+    print("EMAIL:", EMAIL)
+    print("TOKEN PRESENT:", bool(API_TOKEN))
+
     while True:
         response = requests.post(
             f"{JIRA_URL}/rest/api/3/search/jql",
@@ -57,21 +60,24 @@ def fetch_jira_issues(jql):
             auth=(EMAIL, API_TOKEN)
         )
 
+        print("Status:", response.status_code)
+        print("Response:", response.text[:300])
+
         data = response.json()
         batch = data.get("issues", [])
 
         print("Fetched:", len(batch))
         issues.extend(batch)
-        print("Status:", response.status_code)
-        print("Response:", response.text[:500])
+
         if len(batch) < 50:
             break
 
         start_at += 50
+
     return issues
 
 # ==============================
-# 🧠 EXTRACT TEXT FROM JIRA ADF
+# 🧠 EXTRACT TEXT FROM ADF
 # ==============================
 
 def extract_text_from_adf(desc):
@@ -83,7 +89,6 @@ def extract_text_from_adf(desc):
         if isinstance(node, dict):
             if "text" in node:
                 text += node["text"] + " "
-
             if "content" in node:
                 for child in node["content"]:
                     extract(child)
@@ -96,52 +101,42 @@ def extract_text_from_adf(desc):
     return text
 
 # ==============================
-# 🧠 PARSE DESCRIPTION (SMART)
+# 🧠 PARSE DESCRIPTION
 # ==============================
 
 def extract_from_description(desc):
     text = extract_text_from_adf(desc)
-
-    # Normalize spacing
     text = re.sub(r'\s+', ' ', text)
 
     def find(pattern):
         match = re.search(pattern, text, re.IGNORECASE)
         return match.group(1).strip() if match else ""
 
-    # 🎯 CVE ID
     cve_id = find(r"CVE ID:\s*(CVE-\d{4}-\d+)")
-
-    # 🎯 Severity
     severity = find(r"CVSS Severity:\s*([A-Z]+)")
+    package = find(r"Package:\s*(.*?)(?:Location:|Framework:|Fix available:)")
+    image_version = find(r"Image details:.*?Version:\s*([\w\.]+)")
 
-    # 🎯 Package (STOP at next keyword)
-    package = find(r"Package:\s*([^|]+?)(?:Location:|Framework:|Fix available:)")
-
-    # 🎯 Image Version (specifically under Image details)
-    image_version = find(r"Image details:.*?Version:\s*([\d\.]+)")
-
-    # 🎯 Fix version (ONLY first recommended version)
     fix_match = re.search(r"Recommended:\s*version\s*([\d\.]+)", text, re.IGNORECASE)
     fix_available = f"Upgrade to {fix_match.group(1)}" if fix_match else "No"
 
-    # 🎯 CLEAN NOTE (only CVE name, not description)
     note = find(r"Upwind CVE name:\s*([^\.]+)")
 
     return cve_id, severity, package.strip(), image_version, fix_available, note.strip()
+
 # ==============================
-# 🔄 Cluster Env parser ISSUE
+# 🧠 CLUSTER + ENV
 # ==============================
+
 def extract_cluster_env(desc):
     text = extract_text_from_adf(desc)
 
     match = re.search(r"Path:\s*(.+)", text)
     if not match:
-        return "", ""
+        return "Unknown", "Unknown"
 
     path = match.group(1).lower()
 
-    # Detect cluster
     if "superapi" in path:
         cluster = "SuperAPI"
     elif "askmepay" in path:
@@ -151,7 +146,6 @@ def extract_cluster_env(desc):
     else:
         cluster = "Unknown"
 
-    # Detect environment
     if "prod" in path:
         env = "PROD"
     elif "sdlc" in path or "dev" in path:
@@ -160,13 +154,14 @@ def extract_cluster_env(desc):
         env = "Unknown"
 
     return cluster, env
+
 # ==============================
 # 🔄 PROCESS ISSUE
 # ==============================
 
 def process_issue(issue):
     fields = issue["fields"]
-    
+
     summary = fields.get("summary", "")
     description = fields.get("description", "")
 
@@ -179,31 +174,32 @@ def process_issue(issue):
 
     status = fields.get("status", {}).get("name", "")
     fallback_severity = fields.get("priority", {}).get("name", "")
+
     cluster, env = extract_cluster_env(description)
-    # Extract structured data
+
     cve_id, severity_desc, package, image_version, fix, note = extract_from_description(description)
 
     severity = severity_desc if severity_desc else fallback_severity
 
     row = [
-    ticket_no,
-    summary,
-    cve_id,
-    severity,
-    package,
-    image_version,
-    fix,
-    ticket_link,
-    date,
-    status,
-    note,
-    image_version,
-    "",
-    "",
-    month,
-    cluster,
-    env
-]
+        ticket_no,
+        summary,
+        cve_id,
+        severity,
+        package,
+        image_version,
+        fix,
+        ticket_link,
+        date,
+        status,
+        note,
+        image_version,
+        "",
+        "",
+        month,
+        cluster,
+        env
+    ]
 
     return row, month, cluster
 
@@ -219,11 +215,9 @@ def connect_sheets():
 
     creds_dict = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
 
-    creds = ServiceAccountCredentials.from_json_keyfile_dict(
-        creds_dict, scope
-    )
-
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     client = gspread.authorize(creds)
+
     return client.open(GOOGLE_SHEET_NAME)
 
 def get_or_create_sheet(client, sheet_name):
@@ -236,7 +230,7 @@ def get_or_create_sheet(client, sheet_name):
         return sheet
 
 # ==============================
-# 🔄 SYNC LOGIC
+# 🔄 SYNC
 # ==============================
 
 def sync_all(client):
@@ -266,11 +260,8 @@ def sync_all(client):
         index = {r["Ticket No"]: i + 2 for i, r in enumerate(existing)}
 
         ticket_no = row[0]
-        severity = row[3]  # ✅ always define here
+        severity = row[3]
 
-        # =========================
-        # UPDATE OR APPEND
-        # =========================
         if ticket_no in index:
             row_index = index[ticket_no]
 
@@ -280,11 +271,8 @@ def sync_all(client):
             )
         else:
             sheet.append_row(row)
-            row_index = len(existing) + 2  # new row position
+            row_index = len(existing) + 2
 
-        # =========================
-        # COLOR FORMATTING
-        # =========================
         if severity == "CRITICAL":
             color = {"red": 1, "green": 0.8, "blue": 0.8}
         elif severity == "HIGH":
@@ -299,47 +287,33 @@ def sync_all(client):
                 f"A{row_index}:Q{row_index}",
                 {"backgroundColor": color}
             )
-    
-# ===========================
-# formating
-# ===========================
+
+# ==============================
+# 🎨 FORMAT
+# ==============================
+
 def format_sheet(sheet):
-    # 🔹 Header style
     sheet.format("A1:Q1", {
         "textFormat": {"bold": True},
         "backgroundColor": {"red": 0.85, "green": 0.9, "blue": 1}
     })
 
-    # 🔹 Freeze header
     sheet.freeze(rows=1)
-
-    # 🔹 Add filter
     sheet.set_basic_filter("A1:Q1000")
 
-    # 🔹 Set column widths
-    sheet.spreadsheet.batch_update({
-        "requests": [
-            {"updateDimensionProperties": {
-                "range": {"sheetId": sheet.id, "dimension": "COLUMNS", "startIndex": 0, "endIndex": 17},
-                "properties": {"pixelSize": 160},
-                "fields": "pixelSize"
-            }}
-        ]
-    })        
 # ==============================
 # 🚀 MAIN
 # ==============================
 
 def main():
-    client = connect_sheets()
-    sync_all(client)
-    print("✅ Done!")
-    response = requests.get(
-    f"{JIRA_URL}/rest/api/3/project/search",
-    auth=(EMAIL, API_TOKEN)
-    )
+    try:
+        print("🔄 Running at", datetime.now())
+        client = connect_sheets()
+        sync_all(client)
+        print("✅ Done!")
+    except Exception as e:
+        print("❌ ERROR:", e)
 
-    print(response.json())
 # ==============================
 # ▶ RUN
 # ==============================
