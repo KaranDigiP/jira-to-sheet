@@ -1,3 +1,5 @@
+import os
+import json
 import requests
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
@@ -9,11 +11,10 @@ import re
 # ==============================
 
 JIRA_URL = "https://orangeworking.atlassian.net"
-EMAIL = "zkaran.gur@orangeworking.com"
-API_TOKEN = "ATATT3xFfGF0CA-uRA0MIh905rFaGeazkp38uLOMSNyAenjjV-KEJjNLqnKEdBLMUXUX3o2umcm3IAsq-bYp8k7xZelipHmUfkVSgvzYnIJV_dFNuIWoRzAK2e26DOQJkJk-eMxK-z7px8ChpCGEBD_CbwSjnxl24xLLXq66-d0gzFSJFqW049c=23C9FBD8"
+EMAIL = os.getenv("JIRA_EMAIL")
+API_TOKEN = os.getenv("JIRA_API_TOKEN")
 
 GOOGLE_SHEET_NAME = "SuperApi-updated-cluster-ticket-sheet"
-CREDENTIALS_FILE = "credentials.json"
 
 # IMPORTANT: PROJECT FILTER
 JQL = "project = MDRS AND created >= -30d ORDER BY created DESC"
@@ -216,8 +217,10 @@ def connect_sheets():
         "https://www.googleapis.com/auth/drive"
     ]
 
-    creds = ServiceAccountCredentials.from_json_keyfile_name(
-        CREDENTIALS_FILE, scope
+    creds_dict = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
+
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(
+        creds_dict, scope
     )
 
     client = gspread.authorize(creds)
