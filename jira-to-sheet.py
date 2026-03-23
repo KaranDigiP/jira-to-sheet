@@ -14,7 +14,11 @@ JIRA_URL = "https://orangeworking.atlassian.net"
 EMAIL = os.getenv("JIRA_EMAIL")
 API_TOKEN = os.getenv("JIRA_API_TOKEN")
 
-GOOGLE_SHEET_NAME = "SuperApi-updated-cluster-ticket-sheet"
+SHEET_MAP = {
+    "SuperAPI": "SuperApi-updated-cluster-ticket-sheet",
+    "Artemis": "Artemis-ticket-sheet",
+    "AskMePay": "AskMePay-ticket-sheet"
+}
 
 # SAFE JQL (bounded)
 JQL = "project = MDRS AND created >= -7d ORDER BY created DESC"
@@ -207,7 +211,7 @@ def process_issue(issue):
 # 📊 GOOGLE SHEETS
 # ==============================
 
-def connect_sheets():
+def connect_sheets(sheet_name):
     scope = [
         "https://spreadsheets.google.com/feeds",
         "https://www.googleapis.com/auth/drive"
@@ -218,7 +222,7 @@ def connect_sheets():
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     client = gspread.authorize(creds)
 
-    return client.open(GOOGLE_SHEET_NAME)
+    return client.open(sheet_name)
 
 def get_or_create_sheet(client, sheet_name):
     try:
@@ -233,11 +237,12 @@ def get_or_create_sheet(client, sheet_name):
 # 🔄 SYNC
 # ==============================
 
-def sync_all(client):
+def sync_all():
     issues = fetch_jira_issues(JQL)
 
     print("Total issues:", len(issues))
 
+    clients = {}
     sheet_cache = {}
 
     for issue in issues:
@@ -248,13 +253,27 @@ def sync_all(client):
 
         row, month, cluster = result
 
+        if cluster not in SHEET_MAP:
+            print("Skipping unknown cluster:", cluster)
+            continue
+
+        sheet_name_global = SHEET_MAP[cluster]
+
+        # connect per cluster
+        if cluster not in clients:
+            clients[cluster] = connect_sheets(sheet_name_global)
+
+        client = clients[cluster]
+
         sheet_name = f"{cluster}-{month}"
-        print(f"➡ Writing {row[0]} → {sheet_name}")
+        cache_key = f"{cluster}-{month}"
 
-        if sheet_name not in sheet_cache:
-            sheet_cache[sheet_name] = get_or_create_sheet(client, sheet_name)
+        print(f"➡ Writing {row[0]} → {sheet_name_global} → {sheet_name}")
 
-        sheet = sheet_cache[sheet_name]
+        if cache_key not in sheet_cache:
+            sheet_cache[cache_key] = get_or_create_sheet(client, sheet_name)
+
+        sheet = sheet_cache[cache_key]
 
         existing = sheet.get_all_records()
         index = {r["Ticket No"]: i + 2 for i, r in enumerate(existing)}
@@ -308,8 +327,7 @@ def format_sheet(sheet):
 def main():
     try:
         print("🔄 Running at", datetime.now())
-        client = connect_sheets()
-        sync_all(client)
+        sync_all()
         print("✅ Done!")
     except Exception as e:
         print("❌ ERROR:", e)
