@@ -2,7 +2,7 @@ name: Jira Sync
 
 on:
   schedule:
-    - cron: "*/59 * * * *"
+    - cron: "*/5 * * * *"
   workflow_dispatch:
 
 jobs:
