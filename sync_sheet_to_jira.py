@@ -186,35 +186,83 @@ def sync_sheet_to_jira(sheet):
     headers = data[0]
     rows = data[1:]
 
+    # =========================
+    # 🔒 COLUMN AUTO SYNC
+    # =========================
+    REQUIRED_COLUMNS = [
+        "Ticket No", "CVE Names", "CVE ID", "Severity", "Package",
+        "Image Version", "Fix Available", "Ticket Link", "Date",
+        "Status", "Note", "Image Current Version",
+        "Jira Update ticket", "Timeline", "Month",
+        "Cluster", "Environment", "Approval"
+    ]
+
+    if len(headers) < len(REQUIRED_COLUMNS):
+        print("Fixing missing columns...")
+        sheet.update("A1", [REQUIRED_COLUMNS])
+        headers = REQUIRED_COLUMNS
+
+    # =========================
+    # 🔒 BULK LIMIT
+    # =========================
+    MAX_BULK = 10
+    processed = 0
+
     for i, row in enumerate(rows, start=2):
+
+        # 🔒 Prevent short row crash
         ticket = row[0] if len(row) > 0 else ""
-        status = row[COL_STATUS] if len(row) > COL_STATUS else ""
-        jira_flag = row[COL_JIRA_UPDATE] if len(row) > COL_JIRA_UPDATE else ""
-        approval = row[COL_APPROVAL] if len(row) > COL_APPROVAL else ""
+        status = row[9] if len(row) > 9 else ""
+        jira_flag = row[12] if len(row) > 12 else ""
+        approval = row[17] if len(row) > 17 else ""
 
         if not ticket:
             continue
 
-        # ✅ CONDITION CHECK
+        print(f"{ticket} | Status={status} | Approval={approval} | Flag={jira_flag}")
+
+        # =========================
+        # 🔒 APPROVAL CHECK
+        # =========================
         if approval.strip().lower() != "yes":
             continue
 
+        # =========================
+        # 🔒 ALREADY PROCESSED
+        # =========================
         if jira_flag == "Done":
             continue
 
+        # =========================
+        # 🔒 STATUS VALIDATION
+        # =========================
+        status = status.strip()
         if status not in WORKFLOW:
+            print(f"Invalid status: {status}")
             continue
+
+        # =========================
+        # 🔒 BULK CONTROL
+        # =========================
+        if processed >= MAX_BULK:
+            print("Bulk limit reached. Remaining skipped.")
+            break
 
         print(f"Processing {ticket}...")
 
         success = move_issue(ticket, status)
 
         if success:
-            # ✅ Mark Done
-            sheet.update_cell(i, COL_JIRA_UPDATE + 1, "Done")
+            # ✅ Mark as done
+            sheet.update_cell(i, 13, "Done")  # Column M
 
-            # ✅ Reset approval (important)
-            sheet.update_cell(i, COL_APPROVAL + 1, "No")
+            # ✅ Reset approval
+            sheet.update_cell(i, 18, "No")    # Column R
+
+            processed += 1
+
+        else:
+            print(f"FAILED: {ticket}")
 
 # ==============================
 # 🚀 MAIN
