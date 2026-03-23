@@ -241,6 +241,10 @@ def sync_sheet_to_jira(sheet):
         if status not in WORKFLOW:
             print(f"Invalid status: {status}")
             continue
+        # =============================
+        # 🎯 APPLY DROPDOWN (ADD HERE)
+        # =============================
+            apply_dropdown(sheet)
 
         # =========================
         # 🔒 BULK CONTROL
@@ -264,7 +268,36 @@ def sync_sheet_to_jira(sheet):
 
         else:
             print(f"FAILED: {ticket}")
+# ==============================
+# 🎨 SHEET UI
+# ==============================
 
+def apply_dropdown(sheet):
+    sheet.spreadsheet.batch_update({
+        "requests": [
+            {
+                "setDataValidation": {
+                    "range": {
+                        "sheetId": sheet.id,
+                        "startRowIndex": 1,
+                        "endRowIndex": 1000,
+                        "startColumnIndex": 17,
+                        "endColumnIndex": 18
+                    },
+                    "rule": {
+                        "condition": {
+                            "type": "ONE_OF_LIST",
+                            "values": [
+                                {"userEnteredValue": "Yes"},
+                                {"userEnteredValue": "No"}
+                            ]
+                        },
+                        "showCustomUi": True
+                    }
+                }
+            }
+        ]
+    })
 # ==============================
 # 🚀 MAIN
 # ==============================
