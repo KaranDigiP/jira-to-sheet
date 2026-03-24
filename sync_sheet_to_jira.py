@@ -335,31 +335,36 @@ def sync_sheet_to_jira(sheet):
 # ==============================
 
 def apply_dropdown(sheet):
-    sheet.spreadsheet.batch_update({
-        "requests": [
-            {
-                "setDataValidation": {
-                    "range": {
-                        "sheetId": sheet.id,
-                        "startRowIndex": 1,
-                        "endRowIndex": 1000,
-                        "startColumnIndex": 17,  # Column R
-                        "endColumnIndex": 18
-                    },
-                    "rule": {
-                        "condition": {
-                            "type": "ONE_OF_LIST",
-                            "values": [
-                                {"userEnteredValue": "Yes"},
-                                {"userEnteredValue": "No"}
-                            ]
+    try:
+        sheet.spreadsheet.batch_update({
+            "requests": [
+                {
+                    "setDataValidation": {
+                        "range": {
+                            "sheetId": sheet.id,
+                            "startRowIndex": 1,
+                            "endRowIndex": 1000,
+                            "startColumnIndex": 17,
+                            "endColumnIndex": 18
                         },
-                        "showCustomUi": True
+                        "rule": {
+                            "condition": {
+                                "type": "ONE_OF_LIST",
+                                "values": [
+                                    {"userEnteredValue": "Yes"},
+                                    {"userEnteredValue": "No"}
+                                ]
+                            },
+                            "showCustomUi": True
+                        }
                     }
                 }
-            }
-        ]
-    })
+            ]
+        })
+        print(f"✅ Dropdown applied on: {sheet.title}")
+
+    except Exception as e:
+        print(f"❌ Dropdown failed: {e}")
 
 # ==============================
 # 🚀 MAIN
