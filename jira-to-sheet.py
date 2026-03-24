@@ -250,7 +250,6 @@ def connect_sheets(sheet_name):
 
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     client = gspread.authorize(creds)
-    ensure_columns(sheet)
     return client.open(sheet_name)
 
 def get_or_create_sheet(client, sheet_name):
@@ -303,6 +302,9 @@ def sync_all():
             sheet_cache[cache_key] = get_or_create_sheet(client, sheet_name)
 
         sheet = sheet_cache[cache_key]
+
+        # ✅ NOW sheet exists → safe to use
+        ensure_columns(sheet)
 
         existing = sheet.get_all_records()
         index = {r["Ticket No"]: i + 2 for i, r in enumerate(existing)}
