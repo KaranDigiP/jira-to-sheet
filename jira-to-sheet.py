@@ -220,7 +220,21 @@ def process_issue(issue):
 # ==============================
 # 📊 GOOGLE SHEETS
 # ==============================
+def ensure_columns(sheet):
+    existing_headers = sheet.row_values(1)
 
+    REQUIRED_COLUMNS = [
+        "Ticket No", "CVE Names", "CVE ID", "Severity", "Package",
+        "Image Version", "Fix Available", "Ticket Link", "Date",
+        "Status", "Note", "Image Current Version",
+        "Jira Update ticket", "Timeline", "Month",
+        "Cluster", "Environment", "Approval"
+    ]
+
+    if existing_headers != REQUIRED_COLUMNS:
+        print(f"🔧 Fixing columns for {sheet.title}")
+        sheet.update("A1", [REQUIRED_COLUMNS])
+        
 def connect_sheets(sheet_name):
     scope = [
         "https://spreadsheets.google.com/feeds",
@@ -231,7 +245,7 @@ def connect_sheets(sheet_name):
 
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     client = gspread.authorize(creds)
-
+    ensure_columns(sheet)
     return client.open(sheet_name)
 
 def get_or_create_sheet(client, sheet_name):
