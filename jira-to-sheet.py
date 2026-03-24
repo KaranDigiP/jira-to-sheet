@@ -235,7 +235,7 @@ def ensure_columns(sheet):
     # 🔥 If Approval missing OR structure mismatch → FIX
     if existing_headers != REQUIRED_COLUMNS:
         print(f"🔧 Resetting columns in {sheet.title}")
-        sheet.update("A1", [REQUIRED_COLUMNS])
+        sheet.update(values=[REQUIRED_COLUMNS], range_name="A1")
         
 def connect_sheets(sheet_name):
     scope = [
