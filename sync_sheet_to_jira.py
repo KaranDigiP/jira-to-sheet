@@ -429,7 +429,7 @@ def main():
         print("✅ Done!")
 
     except Exception as e:
-        print("❌ ERROR:", e))
+        print("❌ ERROR:", e)
 
 # ==============================
 # ▶ RUN
