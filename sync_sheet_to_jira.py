@@ -202,7 +202,32 @@ def sync_sheet_to_jira(sheet):
         print("Fixing missing columns...")
         sheet.update("A1", [REQUIRED_COLUMNS])
         headers = REQUIRED_COLUMNS
-
+def apply_dropdown(sheet):
+    sheet.spreadsheet.batch_update({
+        "requests": [
+            {
+                "setDataValidation": {
+                    "range": {
+                        "sheetId": sheet.id,
+                        "startRowIndex": 1,
+                        "endRowIndex": 1000,
+                        "startColumnIndex": 17,
+                        "endColumnIndex": 18
+                    },
+                    "rule": {
+                        "condition": {
+                            "type": "ONE_OF_LIST",
+                            "values": [
+                                {"userEnteredValue": "Yes"},
+                                {"userEnteredValue": "No"}
+                            ]
+                        },
+                        "showCustomUi": True
+                    }
+                }
+            }
+        ]
+    })
     # =========================
     # 🔒 BULK LIMIT
     # =========================
@@ -272,32 +297,7 @@ def sync_sheet_to_jira(sheet):
 # 🎨 SHEET UI
 # ==============================
 
-def apply_dropdown(sheet):
-    sheet.spreadsheet.batch_update({
-        "requests": [
-            {
-                "setDataValidation": {
-                    "range": {
-                        "sheetId": sheet.id,
-                        "startRowIndex": 1,
-                        "endRowIndex": 1000,
-                        "startColumnIndex": 17,
-                        "endColumnIndex": 18
-                    },
-                    "rule": {
-                        "condition": {
-                            "type": "ONE_OF_LIST",
-                            "values": [
-                                {"userEnteredValue": "Yes"},
-                                {"userEnteredValue": "No"}
-                            ]
-                        },
-                        "showCustomUi": True
-                    }
-                }
-            }
-        ]
-    })
+
 # ==============================
 # 🚀 MAIN
 # ==============================
