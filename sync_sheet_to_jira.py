@@ -229,7 +229,7 @@ def apply_dropdown(sheet):
         print("❌ Approval column not found")
         return
 
-    col_index = headers.index("Approval")  # dynamic index
+    col_index = headers.index("Approval")
 
     sheet.spreadsheet.batch_update({
         "requests": [
@@ -258,6 +258,7 @@ def apply_dropdown(sheet):
     })
 
     print(f"✅ Dropdown applied on column: {col_index} ({sheet.title})")
+
 def apply_approval_colors(sheet):
     headers = sheet.row_values(1)
 
@@ -329,6 +330,7 @@ def apply_approval_colors(sheet):
     sheet.spreadsheet.batch_update({"requests": requests})
 
     print(f"🎨 Approval colors applied on {sheet.title}")
+
 # ==============================
 # 🔄 SYNC LOGIC (CORE)
 # ==============================
