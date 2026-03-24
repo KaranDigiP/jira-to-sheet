@@ -222,42 +222,77 @@ def apply_status_dropdown(sheet):
 
     print(f"✅ Status dropdown applied on column: {col_index} ({sheet.title})")
 
-def apply_dropdown(sheet):
+def apply_approval_colors(sheet):
     headers = sheet.row_values(1)
 
     if "Approval" not in headers:
-        print("❌ Approval column not found")
         return
 
-    col_index = headers.index("Approval")  # dynamic index
+    col_index = headers.index("Approval")
 
-    sheet.spreadsheet.batch_update({
-        "requests": [
-            {
-                "setDataValidation": {
-                    "range": {
-                        "sheetId": sheet.id,
-                        "startRowIndex": 1,
-                        "endRowIndex": 1000,
-                        "startColumnIndex": col_index,
-                        "endColumnIndex": col_index + 1
+    requests = []
+
+    # 🟢 YES → GREEN
+    requests.append({
+        "addConditionalFormatRule": {
+            "rule": {
+                "ranges": [{
+                    "sheetId": sheet.id,
+                    "startRowIndex": 1,
+                    "endRowIndex": 1000,
+                    "startColumnIndex": col_index,
+                    "endColumnIndex": col_index + 1
+                }],
+                "booleanRule": {
+                    "condition": {
+                        "type": "TEXT_EQ",
+                        "values": [{"userEnteredValue": "Yes"}]
                     },
-                    "rule": {
-                        "condition": {
-                            "type": "ONE_OF_LIST",
-                            "values": [
-                                {"userEnteredValue": "Yes"},
-                                {"userEnteredValue": "No"}
-                            ]
-                        },
-                        "showCustomUi": True
+                    "format": {
+                        "backgroundColor": {
+                            "red": 0.8,
+                            "green": 1,
+                            "blue": 0.8
+                        }
                     }
                 }
-            }
-        ]
+            },
+            "index": 0
+        }
     })
 
-    print(f"✅ Dropdown applied on column: {col_index} ({sheet.title})")
+    # 🔴 NO → RED
+    requests.append({
+        "addConditionalFormatRule": {
+            "rule": {
+                "ranges": [{
+                    "sheetId": sheet.id,
+                    "startRowIndex": 1,
+                    "endRowIndex": 1000,
+                    "startColumnIndex": col_index,
+                    "endColumnIndex": col_index + 1
+                }],
+                "booleanRule": {
+                    "condition": {
+                        "type": "TEXT_EQ",
+                        "values": [{"userEnteredValue": "No"}]
+                    },
+                    "format": {
+                        "backgroundColor": {
+                            "red": 1,
+                            "green": 0.8,
+                            "blue": 0.8
+                        }
+                    }
+                }
+            },
+            "index": 0
+        }
+    })
+
+    sheet.spreadsheet.batch_update({"requests": requests})
+
+    print(f"🎨 Approval colors applied on {sheet.title}")
 
 # ==============================
 # 🔄 SYNC LOGIC (CORE)
