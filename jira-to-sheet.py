@@ -32,7 +32,8 @@ COLUMNS = [
     "Image Version", "Fix Available", "Ticket Link", "Date",
     "Status", "Note", "Image Current Version",
     "Jira Update ticket", "Timeline", "Month",
-    "Cluster", "Environment"
+    "Cluster", "Environment",
+    "Approval"   
 ]
 
 # ==============================
@@ -221,8 +222,6 @@ def process_issue(issue):
 # 📊 GOOGLE SHEETS
 # ==============================
 def ensure_columns(sheet):
-    existing_headers = sheet.row_values(1)
-
     REQUIRED_COLUMNS = [
         "Ticket No", "CVE Names", "CVE ID", "Severity", "Package",
         "Image Version", "Fix Available", "Ticket Link", "Date",
@@ -231,13 +230,11 @@ def ensure_columns(sheet):
         "Cluster", "Environment", "Approval"
     ]
 
-    # 🔥 Add only missing columns (SAFE)
-    if not existing_headers:
-        sheet.update("A1", [REQUIRED_COLUMNS])
-        return
+    existing_headers = sheet.row_values(1)
 
-    if len(existing_headers) < len(REQUIRED_COLUMNS):
-        print(f"🔧 Adding missing columns in {sheet.title}")
+    # 🔥 If Approval missing OR structure mismatch → FIX
+    if existing_headers != REQUIRED_COLUMNS:
+        print(f"🔧 Resetting columns in {sheet.title}")
         sheet.update("A1", [REQUIRED_COLUMNS])
         
 def connect_sheets(sheet_name):
@@ -317,7 +314,7 @@ def sync_all():
 
             sheet.update(
                 values=[row],
-                range_name=f"A{row_index}:Q{row_index}"
+                range_name=f"A{row_index}:R{row_index}"
             )
         else:
             sheet.append_row(row)
@@ -334,7 +331,7 @@ def sync_all():
 
         if color:
             sheet.format(
-                f"A{row_index}:Q{row_index}",
+                f"A{row_index}:R{row_index}",
                 {"backgroundColor": color}
             )
 
