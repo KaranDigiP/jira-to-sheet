@@ -187,7 +187,8 @@ def connect_sheets():
 
 def sync_sheet_to_jira(sheet):
     data = sheet.get_all_values()
-
+    print(f"🔥 Running dropdown for: {sheet.title}")
+    apply_dropdown(sheet)
     if not data:
         return
 
@@ -213,6 +214,41 @@ def sync_sheet_to_jira(sheet):
     # =========================
     # 🎯 APPLY DROPDOWN (ONCE)
     # =========================
+    # ==============================
+# 🎨 SHEET UI
+# ==============================
+
+def apply_dropdown(sheet):
+    try:
+        sheet.spreadsheet.batch_update({
+            "requests": [
+                {
+                    "setDataValidation": {
+                        "range": {
+                            "sheetId": sheet.id,
+                            "startRowIndex": 1,
+                            "endRowIndex": 1000,
+                            "startColumnIndex": 17,
+                            "endColumnIndex": 18
+                        },
+                        "rule": {
+                            "condition": {
+                                "type": "ONE_OF_LIST",
+                                "values": [
+                                    {"userEnteredValue": "Yes"},
+                                    {"userEnteredValue": "No"}
+                                ]
+                            },
+                            "showCustomUi": True
+                        }
+                    }
+                }
+            ]
+        })
+        print(f"✅ Dropdown applied on: {sheet.title}")
+
+    except Exception as e:
+        print(f"❌ Dropdown failed: {e}")
 
     # =========================
     # 🔒 BULK LIMIT
@@ -330,41 +366,6 @@ def sync_sheet_to_jira(sheet):
 # ==============================
 # 🎨 SHEET UI
 # ==============================
-# ==============================
-# 🎨 SHEET UI
-# ==============================
-
-def apply_dropdown(sheet):
-    try:
-        sheet.spreadsheet.batch_update({
-            "requests": [
-                {
-                    "setDataValidation": {
-                        "range": {
-                            "sheetId": sheet.id,
-                            "startRowIndex": 1,
-                            "endRowIndex": 1000,
-                            "startColumnIndex": 17,
-                            "endColumnIndex": 18
-                        },
-                        "rule": {
-                            "condition": {
-                                "type": "ONE_OF_LIST",
-                                "values": [
-                                    {"userEnteredValue": "Yes"},
-                                    {"userEnteredValue": "No"}
-                                ]
-                            },
-                            "showCustomUi": True
-                        }
-                    }
-                }
-            ]
-        })
-        print(f"✅ Dropdown applied on: {sheet.title}")
-
-    except Exception as e:
-        print(f"❌ Dropdown failed: {e}")
 
 # ==============================
 # 🚀 MAIN
