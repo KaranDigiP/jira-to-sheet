@@ -222,6 +222,42 @@ def apply_status_dropdown(sheet):
 
     print(f"✅ Status dropdown applied on column: {col_index} ({sheet.title})")
 
+def apply_dropdown(sheet):
+    headers = sheet.row_values(1)
+
+    if "Approval" not in headers:
+        print("❌ Approval column not found")
+        return
+
+    col_index = headers.index("Approval")  # dynamic index
+
+    sheet.spreadsheet.batch_update({
+        "requests": [
+            {
+                "setDataValidation": {
+                    "range": {
+                        "sheetId": sheet.id,
+                        "startRowIndex": 1,
+                        "endRowIndex": 1000,
+                        "startColumnIndex": col_index,
+                        "endColumnIndex": col_index + 1
+                    },
+                    "rule": {
+                        "condition": {
+                            "type": "ONE_OF_LIST",
+                            "values": [
+                                {"userEnteredValue": "Yes"},
+                                {"userEnteredValue": "No"}
+                            ]
+                        },
+                        "showCustomUi": True
+                    }
+                }
+            }
+        ]
+    })
+
+    print(f"✅ Dropdown applied on column: {col_index} ({sheet.title})")
 def apply_approval_colors(sheet):
     headers = sheet.row_values(1)
 
@@ -293,7 +329,6 @@ def apply_approval_colors(sheet):
     sheet.spreadsheet.batch_update({"requests": requests})
 
     print(f"🎨 Approval colors applied on {sheet.title}")
-
 # ==============================
 # 🔄 SYNC LOGIC (CORE)
 # ==============================
@@ -328,7 +363,7 @@ def sync_sheet_to_jira(sheet):
     # ✅ APPLY DROPDOWN AFTER HEADERS EXIST
     apply_status_dropdown(sheet)   # Status
     apply_dropdown(sheet)
-
+    apply_approval_colors(sheet)
     # =========================
     # 🔒 BULK LIMIT
     # =========================
