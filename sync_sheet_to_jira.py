@@ -185,36 +185,41 @@ def connect_sheets():
 # ==============================
 
 def apply_dropdown(sheet):
-    try:
-        sheet.spreadsheet.batch_update({
-            "requests": [
-                {
-                    "setDataValidation": {
-                        "range": {
-                            "sheetId": sheet.id,
-                            "startRowIndex": 1,
-                            "endRowIndex": 1000,
-                            "startColumnIndex": 18,
-                            "endColumnIndex": 18
+    headers = sheet.row_values(1)
+
+    if "Approval" not in headers:
+        print("❌ Approval column not found")
+        return
+
+    col_index = headers.index("Approval")  # dynamic index
+
+    sheet.spreadsheet.batch_update({
+        "requests": [
+            {
+                "setDataValidation": {
+                    "range": {
+                        "sheetId": sheet.id,
+                        "startRowIndex": 1,
+                        "endRowIndex": 1000,
+                        "startColumnIndex": col_index,
+                        "endColumnIndex": col_index + 1
+                    },
+                    "rule": {
+                        "condition": {
+                            "type": "ONE_OF_LIST",
+                            "values": [
+                                {"userEnteredValue": "Yes"},
+                                {"userEnteredValue": "No"}
+                            ]
                         },
-                        "rule": {
-                            "condition": {
-                                "type": "ONE_OF_LIST",
-                                "values": [
-                                    {"userEnteredValue": "Yes"},
-                                    {"userEnteredValue": "No"}
-                                ]
-                            },
-                            "showCustomUi": True
-                        }
+                        "showCustomUi": True
                     }
                 }
-            ]
-        })
-        print(f"✅ Dropdown applied on: {sheet.title}")
+            }
+        ]
+    })
 
-    except Exception as e:
-        print(f"❌ Dropdown failed: {e}")
+    print(f"✅ Dropdown applied on column: {col_index} ({sheet.title})")
 
 # ==============================
 # 🔄 SYNC LOGIC (CORE)
