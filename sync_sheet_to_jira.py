@@ -161,7 +161,7 @@ def move_issue(issue_key, target_status):
 # 📊 GOOGLE SHEETS
 # ==============================
 
-def connect_sheets():
+def connect_sheets(sheet_name):
     scope = [
         "https://spreadsheets.google.com/feeds",
         "https://www.googleapis.com/auth/drive"
@@ -169,13 +169,10 @@ def connect_sheets():
 
     creds_dict = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
 
-    creds = ServiceAccountCredentials.from_json_keyfile_dict(
-    creds_dict, scope
-)
-
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     client = gspread.authorize(creds)
 
-    return client.open(GOOGLE_SHEET_NAME)
+    return client.open(sheet_name)
 
 # ==============================
 # 🔄 SYNC LOGIC (CORE)
@@ -438,9 +435,14 @@ def sync_sheet_to_jira(sheet):
         else:
             print(f"FAILED: {ticket}")
 # ==============================
-# 🎨 SHEET UI
+# 📊 SHEET MAP (MULTI-CLUSTER)
 # ==============================
 
+SHEET_MAP = {
+    "SuperAPI": "SuperApi-updated-cluster-ticket-sheet",
+    "Artemis": "Artemis-ticket-sheet",
+    "AskMePay": "AskMePay-ticket-sheet"
+}
 # ==============================
 # 🚀 MAIN
 # ==============================
@@ -449,13 +451,15 @@ def main():
     try:
         print("Running at:", datetime.now())
 
-        client = connect_sheets()
+        for cluster, sheet_name in SHEET_MAP.items():
+            print(f"\n🔗 Connecting to {cluster} → {sheet_name}")
 
-        # 🔥 THIS LINE ENSURES ALL SHEETS ARE COVERED
-        for sheet in client.worksheets():
-            print(f"Processing sheet: {sheet.title}")
+            client = connect_sheets(sheet_name)
 
-            sync_sheet_to_jira(sheet)
+            for sheet in client.worksheets():
+                print(f"Processing sheet: {sheet.title}")
+
+                sync_sheet_to_jira(sheet)
 
         print("✅ Done!")
 
