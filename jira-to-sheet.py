@@ -312,7 +312,7 @@ def sync_all():
 # ==============================
 
 def format_sheet(sheet):
-    sheet.format("A1:Q1", {
+    sheet.format("A1:R1", {
         "textFormat": {"bold": True},
         "backgroundColor": {"red": 0.85, "green": 0.9, "blue": 1}
     })
