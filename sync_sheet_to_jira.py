@@ -228,7 +228,7 @@ def apply_dropdown(sheet):
                             "sheetId": sheet.id,
                             "startRowIndex": 1,
                             "endRowIndex": 1000,
-                            "startColumnIndex": 17,
+                            "startColumnIndex": 18,
                             "endColumnIndex": 18
                         },
                         "rule": {
