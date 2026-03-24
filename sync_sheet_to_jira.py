@@ -181,8 +181,15 @@ def connect_sheets():
 # 🔄 SYNC LOGIC (CORE)
 # ==============================
 
+# ==============================
+# 🔄 SYNC LOGIC (CORE)
+# ==============================
+
 def sync_sheet_to_jira(sheet):
     data = sheet.get_all_values()
+
+    if not data:
+        return
 
     headers = data[0]
     rows = data[1:]
@@ -202,32 +209,59 @@ def sync_sheet_to_jira(sheet):
         print("Fixing missing columns...")
         sheet.update("A1", [REQUIRED_COLUMNS])
         headers = REQUIRED_COLUMNS
-def apply_dropdown(sheet):
-    sheet.spreadsheet.batch_update({
-        "requests": [
-            {
-                "setDataValidation": {
-                    "range": {
-                        "sheetId": sheet.id,
-                        "startRowIndex": 1,
-                        "endRowIndex": 1000,
-                        "startColumnIndex": 17,
-                        "endColumnIndex": 18
-                    },
-                    "rule": {
-                        "condition": {
-                            "type": "ONE_OF_LIST",
-                            "values": [
-                                {"userEnteredValue": "Yes"},
-                                {"userEnteredValue": "No"}
-                            ]
-                        },
-                        "showCustomUi": True
-                    }
-                }
-            }
-        ]
-    })
+
+    # =========================
+    # 🎯 APPLY DROPDOWN (ONCE)
+    # =========================
+
+    # =========================
+    # 🔒 BULK LIMIT
+    # =========================
+    MAX_BULK = 10
+    processed = 0
+
+    for i, row in enumerate(rows, start=2):
+
+        # 🔒 Safe indexing
+        ticket = row[0] if len(row) > 0 else ""
+        status = row[9] if len(row) > 9 else ""
+        jira_flag = row[12] if len(row) > 12 else ""
+        approval = row[17] if len(row) > 17 else ""
+
+        if not ticket:
+            continue
+
+        print(f"{ticket} | Status={status} | Approval={approval} | Flag={jira_flag}")
+
+        # 🔒 Approval check
+        if approval.strip().lower() != "yes":
+            continue
+
+        # 🔒 Skip already processed
+        if jira_flag == "Done":
+            continue
+
+        # 🔒 Validate status
+        status = status.strip()
+        if status not in WORKFLOW:
+            print(f"Invalid status: {status}")
+            continue
+
+        # 🔒 Bulk limit
+        if processed >= MAX_BULK:
+            print("Bulk limit reached. Remaining skipped.")
+            break
+
+        print(f"Processing {ticket}...")
+
+        success = move_issue(ticket, status)
+
+        if success:
+            sheet.update_cell(i, 13, "Done")  # Column M
+            sheet.update_cell(i, 18, "No")    # Column R
+            processed += 1
+        else:
+            print(f"FAILED: {ticket}")
     # =========================
     # 🔒 BULK LIMIT
     # =========================
@@ -296,7 +330,36 @@ def apply_dropdown(sheet):
 # ==============================
 # 🎨 SHEET UI
 # ==============================
+# ==============================
+# 🎨 SHEET UI
+# ==============================
 
+def apply_dropdown(sheet):
+    sheet.spreadsheet.batch_update({
+        "requests": [
+            {
+                "setDataValidation": {
+                    "range": {
+                        "sheetId": sheet.id,
+                        "startRowIndex": 1,
+                        "endRowIndex": 1000,
+                        "startColumnIndex": 17,  # Column R
+                        "endColumnIndex": 18
+                    },
+                    "rule": {
+                        "condition": {
+                            "type": "ONE_OF_LIST",
+                            "values": [
+                                {"userEnteredValue": "Yes"},
+                                {"userEnteredValue": "No"}
+                            ]
+                        },
+                        "showCustomUi": True
+                    }
+                }
+            }
+        ]
+    })
 
 # ==============================
 # 🚀 MAIN
