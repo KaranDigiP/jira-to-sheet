@@ -187,75 +187,106 @@ def apply_status_dropdown(sheet):
     headers = sheet.row_values(1)
 
     if "Status" not in headers:
-        print("❌ Status column not found")
         return
 
     col_index = headers.index("Status")
 
-    sheet.spreadsheet.batch_update({
-        "requests": [{
-            "setDataValidation": {
-                "range": {
-                    "sheetId": sheet.id,
-                    "startRowIndex": 1,
-                    "endRowIndex": 1000,
-                    "startColumnIndex": col_index,
-                    "endColumnIndex": col_index + 1
-                },
-                "rule": {
-                    "condition": {
-                        "type": "ONE_OF_LIST",
-                        "values": [
-                            {"userEnteredValue": "Backlog"},
-                            {"userEnteredValue": "Selected for Development"},
-                            {"userEnteredValue": "In Progress"},
-                            {"userEnteredValue": "Done"}
-                        ]
-                    },
-                    "showCustomUi": True
-                }
-            }
-        }]
+    requests = []
+
+    # 🔥 CLEAR existing validation
+    requests.append({
+        "setDataValidation": {
+            "range": {
+                "sheetId": sheet.id,
+                "startRowIndex": 1,
+                "endRowIndex": 1000,
+                "startColumnIndex": col_index,
+                "endColumnIndex": col_index + 1
+            },
+            "rule": None
+        }
     })
 
-    print(f"✅ Status dropdown applied ({sheet.title})")
+    # ✅ APPLY NEW DROPDOWN
+    requests.append({
+        "setDataValidation": {
+            "range": {
+                "sheetId": sheet.id,
+                "startRowIndex": 1,
+                "endRowIndex": 1000,
+                "startColumnIndex": col_index,
+                "endColumnIndex": col_index + 1
+            },
+            "rule": {
+                "condition": {
+                    "type": "ONE_OF_LIST",
+                    "values": [
+                        {"userEnteredValue": "Backlog"},
+                        {"userEnteredValue": "Selected for Development"},
+                        {"userEnteredValue": "In Progress"},
+                        {"userEnteredValue": "Done"}
+                    ]
+                },
+                "showCustomUi": True
+            }
+        }
+    })
+
+    sheet.spreadsheet.batch_update({"requests": requests})
+
+    print(f"✅ Status dropdown FIXED ({sheet.title})")
 
 
 def apply_approval_dropdown(sheet):
     headers = sheet.row_values(1)
 
     if "Approval" not in headers:
-        print("❌ Approval column not found")
         return
 
     col_index = headers.index("Approval")
 
-    sheet.spreadsheet.batch_update({
-        "requests": [{
-            "setDataValidation": {
-                "range": {
-                    "sheetId": sheet.id,
-                    "startRowIndex": 1,
-                    "endRowIndex": 1000,
-                    "startColumnIndex": col_index,
-                    "endColumnIndex": col_index + 1
-                },
-                "rule": {
-                    "condition": {
-                        "type": "ONE_OF_LIST",
-                        "values": [
-                            {"userEnteredValue": "Yes"},
-                            {"userEnteredValue": "No"}
-                        ]
-                    },
-                    "showCustomUi": True
-                }
-            }
-        }]
+    requests = []
+
+    # 🔥 CLEAR FIRST
+    requests.append({
+        "setDataValidation": {
+            "range": {
+                "sheetId": sheet.id,
+                "startRowIndex": 1,
+                "endRowIndex": 1000,
+                "startColumnIndex": col_index,
+                "endColumnIndex": col_index + 1
+            },
+            "rule": None
+        }
     })
 
-    print(f"✅ Approval dropdown applied ({sheet.title})")
+    # ✅ APPLY
+    requests.append({
+        "setDataValidation": {
+            "range": {
+                "sheetId": sheet.id,
+                "startRowIndex": 1,
+                "endRowIndex": 1000,
+                "startColumnIndex": col_index,
+                "endColumnIndex": col_index + 1
+            },
+            "rule": {
+                "condition": {
+                    "type": "ONE_OF_LIST",
+                    "values": [
+                        {"userEnteredValue": "Yes"},
+                        {"userEnteredValue": "No"}
+                    ]
+                },
+                "showCustomUi": True
+            }
+        }
+    })
 
+    sheet.spreadsheet.batch_update({"requests": requests})
+
+    print(f"✅ Approval dropdown FIXED ({sheet.title})")
 def apply_approval_colors(sheet):
     headers = sheet.row_values(1)
 
