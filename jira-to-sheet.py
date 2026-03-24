@@ -21,7 +21,7 @@ SHEET_MAP = {
 }
 
 # SAFE JQL (bounded)
-JQL = "project = MDRS AND created >= -7d ORDER BY created DESC"
+JQL = "project in (MDRS, MDRAT, MDRAM) AND created >= -7d ORDER BY created DESC"
 
 # ==============================
 # 📊 COLUMNS
@@ -132,30 +132,40 @@ def extract_from_description(desc):
 # 🧠 CLUSTER + ENV
 # ==============================
 
-def extract_cluster_env(desc):
+def extract_cluster_env(desc, issue_key):
     text = extract_text_from_adf(desc)
 
     match = re.search(r"Path:\s*(.+)", text)
-    if not match:
-        return "Unknown", "Unknown"
 
-    path = match.group(1).lower()
+    cluster = "Unknown"
+    env = "Unknown"
 
-    if "superapi" in path:
-        cluster = "SuperAPI"
-    elif "askmepay" in path:
-        cluster = "AskMePay"
-    elif "artemis" in path:
-        cluster = "Artemis"
-    else:
-        cluster = "Unknown"
+    # Try from path
+    if match:
+        path = match.group(1).lower()
 
-    if "prod" in path:
-        env = "PROD"
-    elif "sdlc" in path or "dev" in path:
-        env = "DEV"
-    else:
-        env = "Unknown"
+        if "superapi" in path:
+            cluster = "SuperAPI"
+        elif "askmepay" in path:
+            cluster = "AskMePay"
+        elif "artemis" in path:
+            cluster = "Artemis"
+
+        if "prod" in path:
+            env = "PROD"
+        elif "sdlc" in path or "dev" in path:
+            env = "DEV"
+
+    # 🔥 FALLBACK (THIS IS KEY)
+    if cluster == "Unknown":
+        project = issue_key.split("-")[0]
+
+        if project == "MDRS":
+            cluster = "SuperAPI"
+        elif project == "MDRAT":
+            cluster = "Artemis"
+        elif project == "MDRAM":
+            cluster = "AskMePay"
 
     return cluster, env
 
@@ -179,7 +189,7 @@ def process_issue(issue):
     status = fields.get("status", {}).get("name", "")
     fallback_severity = fields.get("priority", {}).get("name", "")
 
-    cluster, env = extract_cluster_env(description)
+    cluster, env = extract_cluster_env(description, ticket_no)
 
     cve_id, severity_desc, package, image_version, fix, note = extract_from_description(description)
 
