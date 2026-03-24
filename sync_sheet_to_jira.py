@@ -420,14 +420,16 @@ def main():
 
         client = connect_sheets()
 
+        # 🔥 THIS LINE ENSURES ALL SHEETS ARE COVERED
         for sheet in client.worksheets():
             print(f"Processing sheet: {sheet.title}")
+
             sync_sheet_to_jira(sheet)
 
         print("✅ Done!")
 
     except Exception as e:
-        print("❌ ERROR:", e)
+        print("❌ ERROR:", e))
 
 # ==============================
 # ▶ RUN
