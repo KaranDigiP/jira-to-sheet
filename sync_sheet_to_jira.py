@@ -361,7 +361,7 @@ def sync_sheet_to_jira(sheet):
 
     # ✅ APPLY DROPDOWN AFTER HEADERS EXIST
     apply_status_dropdown(sheet)   # Status
-    apply_dropdown(sheet)
+    apply_approval_dropdown(sheet)
     apply_approval_colors(sheet)
     # =========================
     # 🔒 BULK LIMIT
