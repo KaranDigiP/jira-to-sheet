@@ -193,36 +193,35 @@ def apply_status_dropdown(sheet):
     col_index = headers.index("Status")
 
     sheet.spreadsheet.batch_update({
-        "requests": [
-            {
-                "setDataValidation": {
-                    "range": {
-                        "sheetId": sheet.id,
-                        "startRowIndex": 1,
-                        "endRowIndex": 1000,
-                        "startColumnIndex": col_index,
-                        "endColumnIndex": col_index + 1
+        "requests": [{
+            "setDataValidation": {
+                "range": {
+                    "sheetId": sheet.id,
+                    "startRowIndex": 1,
+                    "endRowIndex": 1000,
+                    "startColumnIndex": col_index,
+                    "endColumnIndex": col_index + 1
+                },
+                "rule": {
+                    "condition": {
+                        "type": "ONE_OF_LIST",
+                        "values": [
+                            {"userEnteredValue": "Backlog"},
+                            {"userEnteredValue": "Selected for Development"},
+                            {"userEnteredValue": "In Progress"},
+                            {"userEnteredValue": "Done"}
+                        ]
                     },
-                    "rule": {
-                        "condition": {
-                            "type": "ONE_OF_LIST",
-                            "values": [
-                                {"userEnteredValue": "Backlog"},
-                                {"userEnteredValue": "Selected for Development"},
-                                {"userEnteredValue": "In Progress"},
-                                {"userEnteredValue": "Done"}
-                            ]
-                        },
-                        "showCustomUi": True
-                    }
+                    "showCustomUi": True
                 }
             }
-        ]
+        }]
     })
 
-    print(f"✅ Status dropdown applied on column: {col_index} ({sheet.title})")
+    print(f"✅ Status dropdown applied ({sheet.title})")
 
-def apply_dropdown(sheet):
+
+def apply_approval_dropdown(sheet):
     headers = sheet.row_values(1)
 
     if "Approval" not in headers:
@@ -232,32 +231,30 @@ def apply_dropdown(sheet):
     col_index = headers.index("Approval")
 
     sheet.spreadsheet.batch_update({
-        "requests": [
-            {
-                "setDataValidation": {
-                    "range": {
-                        "sheetId": sheet.id,
-                        "startRowIndex": 1,
-                        "endRowIndex": 1000,
-                        "startColumnIndex": col_index,
-                        "endColumnIndex": col_index + 1
+        "requests": [{
+            "setDataValidation": {
+                "range": {
+                    "sheetId": sheet.id,
+                    "startRowIndex": 1,
+                    "endRowIndex": 1000,
+                    "startColumnIndex": col_index,
+                    "endColumnIndex": col_index + 1
+                },
+                "rule": {
+                    "condition": {
+                        "type": "ONE_OF_LIST",
+                        "values": [
+                            {"userEnteredValue": "Yes"},
+                            {"userEnteredValue": "No"}
+                        ]
                     },
-                    "rule": {
-                        "condition": {
-                            "type": "ONE_OF_LIST",
-                            "values": [
-                                {"userEnteredValue": "Yes"},
-                                {"userEnteredValue": "No"}
-                            ]
-                        },
-                        "showCustomUi": True
-                    }
+                    "showCustomUi": True
                 }
             }
-        ]
+        }]
     })
 
-    print(f"✅ Dropdown applied on column: {col_index} ({sheet.title})")
+    print(f"✅ Approval dropdown applied ({sheet.title})")
 
 def apply_approval_colors(sheet):
     headers = sheet.row_values(1)
