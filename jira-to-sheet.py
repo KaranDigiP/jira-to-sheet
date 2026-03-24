@@ -231,8 +231,13 @@ def ensure_columns(sheet):
         "Cluster", "Environment", "Approval"
     ]
 
-    if existing_headers != REQUIRED_COLUMNS:
-        print(f"🔧 Fixing columns for {sheet.title}")
+    # 🔥 Add only missing columns (SAFE)
+    if not existing_headers:
+        sheet.update("A1", [REQUIRED_COLUMNS])
+        return
+
+    if len(existing_headers) < len(REQUIRED_COLUMNS):
+        print(f"🔧 Adding missing columns in {sheet.title}")
         sheet.update("A1", [REQUIRED_COLUMNS])
         
 def connect_sheets(sheet_name):
