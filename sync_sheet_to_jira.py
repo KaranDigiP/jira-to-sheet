@@ -183,6 +183,44 @@ def connect_sheets():
     # ==============================
 # 🎨 SHEET UI
 # ==============================
+def apply_status_dropdown(sheet):
+    headers = sheet.row_values(1)
+
+    if "Status" not in headers:
+        print("❌ Status column not found")
+        return
+
+    col_index = headers.index("Status")
+
+    sheet.spreadsheet.batch_update({
+        "requests": [
+            {
+                "setDataValidation": {
+                    "range": {
+                        "sheetId": sheet.id,
+                        "startRowIndex": 1,
+                        "endRowIndex": 1000,
+                        "startColumnIndex": col_index,
+                        "endColumnIndex": col_index + 1
+                    },
+                    "rule": {
+                        "condition": {
+                            "type": "ONE_OF_LIST",
+                            "values": [
+                                {"userEnteredValue": "Backlog"},
+                                {"userEnteredValue": "Selected for Development"},
+                                {"userEnteredValue": "In Progress"},
+                                {"userEnteredValue": "Done"}
+                            ]
+                        },
+                        "showCustomUi": True
+                    }
+                }
+            }
+        ]
+    })
+
+    print(f"✅ Status dropdown applied on column: {col_index} ({sheet.title})")
 
 def apply_dropdown(sheet):
     headers = sheet.row_values(1)
@@ -253,6 +291,7 @@ def sync_sheet_to_jira(sheet):
         headers = REQUIRED_COLUMNS
 
     # ✅ APPLY DROPDOWN AFTER HEADERS EXIST
+    apply_status_dropdown(sheet)   # Status
     apply_dropdown(sheet)
 
     # =========================
